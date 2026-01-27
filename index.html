@@ -3,78 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Voice & Text Journal</title>
+    <title>My Persistent Journal</title>
     <style>
-        body { font-family: sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding: 20px; }
+        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; display: flex; justify-content: center; }
         .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
-        h2 { color: #333; text-align: center; }
-        textarea { width: 100%; height: 150px; border: 1px solid #ddd; border-radius: 8px; padding: 10px; box-sizing: border-box; resize: vertical; margin-bottom: 15px; }
-        .controls { display: flex; gap: 10px; margin-bottom: 20px; }
-        button { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        textarea { width: 100%; height: 100px; border: 1px solid #ddd; border-radius: 8px; padding: 10px; margin-bottom: 10px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 10px; }
         #recordBtn { background: #ff4757; color: white; }
         #stopBtn { background: #2f3542; color: white; display: none; }
-        #saveBtn { background: #2ed573; color: white; width: 100%; }
-        audio { width: 100%; margin-top: 10px; }
-        .entry { border-top: 1px solid #eee; margin-top: 20px; padding-top: 15px; }
+        #saveBtn { background: #2ed573; color: white; }
+        .saved-note { background: #eef2f3; padding: 10px; border-radius: 8px; margin-top: 10px; }
     </style>
 </head>
-<body>
+<body onload="loadSavedData()">
 
 <div class="container">
-    <h2>Voice & Text Journal</h2>
-    
-    <textarea id="textInput" placeholder="Write your thoughts here..."></textarea>
-    
-    <div class="controls">
-        <button id="recordBtn">🎤 Start Recording</button>
-        <button id="stopBtn">⏹️ Stop</button>
-    </div>
-    
+    <h2>My Smart Journal</h2>
+    <textarea id="textInput" placeholder="Type your note..."></textarea>
+    <button id="recordBtn">🎤 Start Recording</button>
+    <button id="stopBtn">⏹️ Stop Recording</button>
     <div id="audioPlayback"></div>
-    <br>
-    <button id="saveBtn">💾 Save Entry (Console)</button>
-
-    <div class="entry" id="status">Ready to capture...</div>
+    <button id="saveBtn">💾 Save Permanently</button>
+    
+    <div id="entriesContainer">
+        <h3>Previous Note:</h3>
+        <div id="savedTextDisplay" class="saved-note">No text saved yet.</div>
+    </div>
 </div>
 
 <script>
     let mediaRecorder;
     let audioChunks = [];
+
+    // Save Text to LocalStorage
+    function saveToBrowser() {
+        const text = document.getElementById('textInput').value;
+        localStorage.setItem('journalText', text);
+        document.getElementById('savedTextDisplay').innerText = text;
+        alert("Text saved to your phone's memory!");
+    }
+
+    // Load Text from LocalStorage
+    function loadSavedData() {
+        const savedText = localStorage.getItem('journalText');
+        if (savedText) {
+            document.getElementById('textInput').value = savedText;
+            document.getElementById('savedTextDisplay').innerText = savedText;
+        }
+    }
+
+    document.getElementById('saveBtn').onclick = saveToBrowser;
+
+    // Voice Recording Logic
     const recordBtn = document.getElementById('recordBtn');
     const stopBtn = document.getElementById('stopBtn');
-    const audioPlayback = document.getElementById('audioPlayback');
 
     recordBtn.onclick = async () => {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         mediaRecorder = new MediaRecorder(stream);
         mediaRecorder.start();
         audioChunks = [];
-
         mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
         mediaRecorder.onstop = () => {
             const audioBlob = new Blob(audioChunks, { type: 'audio/mpeg' });
             const audioUrl = URL.createObjectURL(audioBlob);
-            audioPlayback.innerHTML = `<audio controls src="${audioUrl}"></audio>`;
+            document.getElementById('audioPlayback').innerHTML = `<audio controls src="${audioUrl}"></audio>`;
         };
-
         recordBtn.style.display = 'none';
         stopBtn.style.display = 'block';
-        document.getElementById('status').innerText = "Recording...";
     };
 
     stopBtn.onclick = () => {
         mediaRecorder.stop();
         stopBtn.style.display = 'none';
         recordBtn.style.display = 'block';
-        document.getElementById('status').innerText = "Recording saved to player!";
-    };
-
-    document.getElementById('saveBtn').onclick = () => {
-        const text = document.getElementById('textInput').value;
-        console.log("Saved Text:", text);
-        alert("Entry captured! (Check your browser console to see the data)");
     };
 </script>
-
 </body>
 </html>
